@@ -132,6 +132,12 @@ func (r SmallRoom) contents(d Dungeon) string {
 		return "Empty"
 	} else if contentRoll < 8 {
 		return generateSmallRoomScenery(d)
+	} else if contentRoll < 11 {
+		return generateNovelty(d)
+	} else if contentRoll < 14 {
+		return generateObstacle(d)
+	} else if contentRoll < 16 {
+		return generateDiscovery(d)
 	}
 }
 
@@ -231,6 +237,122 @@ func (f *BastionFunctions) smallRoomScenery() string {
 	return "Contains spy holes that let you see into adjoining rooms, allowing you to generate the rooms without opening the doors to them. All exits are locked without keys."
 }
 
+func generateNovelty(d Dungeon) string {
+	if d.PendingEvents[0].Category == "any" || d.PendingEvents[0].Category == "novelty" {
+		var event Event
+		event, d.PendingEvents = pop(d.PendingEvents)
+		return event.Message
+	}
+
+	return d.Functions.novelty()
+}
+
+func (f *BastionFunctions) novelty() string {
+	noveltyRoll := rand.Intn(12)
+	if noveltyRoll < 1 {
+		return "Cannon with 1d10x cannonballs and barrels of powder. If operated, the cannon deals Trap bludgeoning damage."
+	} else if noveltyRoll < 2 {
+		return "Magic map of the area around the bastion, allowing the party to find 1x Treasure on their way back to town."
+	} else if noveltyRoll < 3 {
+		return "Arched bridge leading to an iron door halfway up a wall."
+	} else if noveltyRoll < 4 {
+		return "Immense, monstrous statues on either side of all doors in the room."
+	} else if noveltyRoll < 5 {
+		return "Drawbridge made of wall of force"
+	} else if noveltyRoll < 6 {
+		return "Miniature model of the bastion, populated by tiny illusions of its inhabitants. For the remainder of the dungeon, you can always generate rooms before opening their doors."
+	} else if noveltyRoll < 7 {
+		return "Beasts heads mounted on the wall. Although bodiless, they are alive and can bite for Trap piercing damage."
+	} else if noveltyRoll < 8 {
+		return "A marble table around which sit the spirits of dead warriors re-enacting an ancient feast."
+	} else if noveltyRoll < 9 {
+		return "Hundreds of life-sized, sculpted warriors standing in battle array."
+	} else if noveltyRoll < 10 {
+		options := []string{
+			"A war banner 20 feet on each side.",
+			"A war banner 30 feet on each side.",
+		}
+		return randSelect(options)
+	} else if noveltyRoll < 11 {
+		return "Portrait gallery. Each portrait is enchanted with a permanent Magic Mouth spell."
+	}
+	return "Narrow shafts that carry sound. It is perfect for eavesdropping or communicating between distant chambers. You can generate adjoining rooms without opening their doors."
+}
+
+func generateDiscovery(d Dungeon) string {
+	if d.PendingEvents[0].Category == "any" || d.PendingEvents[0].Category == "discovery" {
+		var event Event
+		event, d.PendingEvents = pop(d.PendingEvents)
+		return event.Message
+	}
+
+	ret, newEvents := d.Functions.discovery()
+	for _, e := range newEvents {
+		d.PendingEvents = append(d.PendingEvents, e)
+	}
+
+	return ret
+}
+
+func (f *BastionFunctions) discovery() (string, []Event) {
+	discoveryRoll := rand.Intn(12)
+	if discoveryRoll < 1 {
+		return "[QUEST ITEM] A list of passwords, each next to a day of the week.", []Event{{
+			Category: "obstacle",
+			Message:  "A locked chest, which demands today's password. Inside is 1x Treasure. Lock cannot be picked.",
+		}}
+	} else if discoveryRoll < 2 {
+		return "[QUEST ITEM] A key bearing a family crest.", []Event{{
+			Category: "obstacle",
+			Message:  "A locked chest, bearing a family crest. Inside is 1x Treasure. Lock cannot be picked.",
+		}}
+	} else if discoveryRoll < 3 {
+		return "[QUEST ITEM] A gold-plated gauntlet.", []Event{{
+			Category: "obstacle",
+			Message:  "A locked chest, with an indentation in the shape of a gauntlet. Inside is 1x Treasure. Lock cannot be picked.",
+		}}
+	} else if discoveryRoll < 4 {
+		return "[QUEST ITEM] A keyring with 7 keys.", []Event{{
+			Category: "obstacle",
+			Message:  "A locked chest, with 7 locks. Inside is 1x Treasure. Lock cannot be picked.",
+		}}
+	} else if discoveryRoll < 5 {
+		msg, newEvents := f.escalation()
+		msg += "\n[ENCOUNTER MODIFIER] Only one random creature from this group is present, and it is not particularly loyal, so is willing to talk."
+		return msg, newEvents
+	} else if discoveryRoll < 6 {
+		msg, newEvents := f.escalation()
+		options := []string{
+			"\n[ENCOUNTER MODIFIER] This group of creatures are dissatisfied with their commander and willing to turn a blind eye to intruders.",
+			"\n[ENCOUNTER MODIFIER] This group of creatures are dissatisfied with their commander and willing to aid intruders.",
+		}
+		msg += randSelect(options)
+		return msg, newEvents
+	} else if discoveryRoll < 7 {
+		msg, newEvents := f.escalation()
+		msg += "\n[ENCOUNTER MODIFIER] This group of creatures are exchanging revealing gossip about their commander and not paying attention to surroundings. One of the dungeon boss' modifiers is generated now."
+		return msg, newEvents
+	} else if discoveryRoll < 8 {
+		return "A messenger with urgent news approaches the party, telling them that if they immediately return to town they can get the quest reward.", []Event{}
+	} else if discoveryRoll < 9 {
+		options := [][]string{
+			[]string{
+				"An armoury containing ranged weapons (1d4x $rangedWeapon), ammunition (1d10x $ammo), and ballistas (deal Trap damage of a type based on their ammunition if operated). It also contains 12x +1 Bow Arrows.",
+			},
+			[]string{
+				"An armoury containing ranged weapons (1d4x $rangedWeapon), ammunition (1d10x $ammo), and ballistas (deal Trap damage of a type based on their ammunition if operated). It also contains 12x +1 Bow Arrows and a Javelin of Lightning.",
+				"An armoury containing ranged weapons (1d4x $rangedWeapon), ammunition (1d10x $ammo), and ballistas (deal Trap damage of a type based on their ammunition if operated). It also contains 12x +1 Bow Arrows and 1x Treasure.",
+			},
+		}
+		return process(randSelect(randSelect(options))), []Event{}
+	} else if discoveryRoll < 10 {
+		return "A richly furnished bed chamber containing a four-poster bed, a desk, wardrobes, and treasure chests containing 1x Treasure for each player.", []Event{}
+	} else if discoveryRoll < 11 {
+		return "A chest containing officers' armour and uniforms (1d4x suits of $bodyArmour).", []Event{}
+	}
+	return "Treasure vault filled with several splintered chests and one locked (no key) iron chest containing 1x Treasure for each player.", []Event{}
+}
+
 func generateEscalation(d Dungeon) string {
 	if d.PendingEvents[0].Category == "any" || d.PendingEvents[0].Category == "escalation" {
 		var event Event
@@ -316,22 +438,22 @@ func (f *BastionFunctions) obstacle() (string, []Event) {
 	obstacleRoll := rand.Intn(20)
 	if obstacleRoll < 1 {
 		return "A locked chest, which demands today's password. Inside is 1x Treasure. Lock cannot be picked.", []Event{{
-			Category: "combat reward",
+			Category: "discovery",
 			Message:  "[QUEST ITEM] A list of passwords, each next to a day of the week.",
 		}}
 	} else if obstacleRoll < 2 {
 		return "A locked chest, bearing a family crest. Inside is 1x Treasure. Lock cannot be picked.", []Event{{
-			Category: "combat reward",
+			Category: "discovery",
 			Message:  "[QUEST ITEM] A key bearing a family crest.",
 		}}
 	} else if obstacleRoll < 3 {
 		return "A locked chest, with an indentation in the shape of a gauntlet. Inside is 1x Treasure. Lock cannot be picked.", []Event{{
-			Category: "combat reward",
+			Category: "discovery",
 			Message:  "[QUEST ITEM] A gold-plated gauntlet.",
 		}}
 	} else if obstacleRoll < 4 {
 		return "A locked chest, with 7 locks. Inside is 1x Treasure. Lock cannot be picked.", []Event{{
-			Category: "combat reward",
+			Category: "discovery",
 			Message:  "[QUEST ITEM] A keyring with 7 keys.",
 		}}
 	} else if obstacleRoll < 5 {

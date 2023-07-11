@@ -7,9 +7,10 @@ import (
 )
 
 var SUBSTITUTION_MAP = map[string][]string{
-	"$bodyArmour": BODY_ARMOURS,
-	"$weapon":     WEAPONS,
-	"$ammo":       AMMO,
+	"$bodyArmour":   BODY_ARMOURS,
+	"$weapon":       WEAPONS,
+	"$ammo":         AMMO,
+	"$rangedWeapon": RANGED_WEAPONS,
 }
 
 func process(s string) string {

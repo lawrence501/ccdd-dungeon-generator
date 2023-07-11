@@ -27,6 +27,8 @@ type DungeonFunctions interface {
 	escalation() (string, []Event)
 	obstacle() (string, []Event)
 	exits() string
+	novelty() string
+	discovery() (string, []Event)
 }
 
 type BastionFunctions struct{}
@@ -105,6 +107,17 @@ var WEAPONS []string = []string{
 	"Trident",
 	"Warhammer",
 	"Whip",
+	"Longbow",
+	"Net",
+	"Shortbow",
+}
+
+var RANGED_WEAPONS []string = []string{
+	"Blowgun",
+	"Crossbow",
+	"Hand Crossbow",
+	"Sling",
+	"Wand",
 	"Longbow",
 	"Net",
 	"Shortbow",
