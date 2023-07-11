@@ -1,7 +1,7 @@
 package main
 
 type Room interface {
-	size() string
+	size() (int, int)
 	contents(d Dungeon) string
 }
 
@@ -9,17 +9,10 @@ type PassageRoom struct{}
 type SmallRoom struct{}
 type LargeRoom struct{}
 
-type Dungeon interface {
-	generateRoom() string
-	passageScenery() string
-	escalation() string
-	obstacle() string
-	setPiece() string
-}
-
-type DungeonData struct {
+type Dungeon struct {
 	Type          string
 	PendingEvents []Event
+	Functions     DungeonFunctions
 }
 
 type Event struct {
@@ -27,10 +20,16 @@ type Event struct {
 	Message  string
 }
 
-type Bastion struct {
-	DungeonData
-	AlertCounter int
+type DungeonFunctions interface {
+	room() Room
+	passageScenery() string
+	smallRoomScenery() string
+	escalation() (string, []Event)
+	obstacle() (string, []Event)
+	exits() string
 }
+
+type BastionFunctions struct{}
 
 var DUNGEON_TYPES []string = []string{
 	"bastion",

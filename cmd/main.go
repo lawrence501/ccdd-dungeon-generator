@@ -39,7 +39,7 @@ func main() {
 			if strings.ToLower(roomInput) == "exit" {
 				break
 			}
-			dungeon.generateRoom()
+			generateRoom(dungeon)
 		}
 
 		if err != nil {
