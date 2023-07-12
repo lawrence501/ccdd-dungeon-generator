@@ -2,7 +2,7 @@ package main
 
 type Room interface {
 	size() (int, int)
-	contents(d Dungeon) string
+	contents(d *Dungeon) string
 }
 
 type PassageRoom struct{}
@@ -29,18 +29,19 @@ type DungeonFunctions interface {
 	exits() string
 	novelty() string
 	discovery() (string, []Event)
+	setPiece() string
 }
 
 type BastionFunctions struct{}
 
 var DUNGEON_TYPES []string = []string{
 	"bastion",
-	"laboratory",
-	"mine",
-	"ruin",
-	"sewer",
-	"temple",
-	"tomb",
+	// "laboratory",
+	// "mine",
+	// "ruin",
+	// "sewer",
+	// "temple",
+	// "tomb",
 }
 
 var BODY_ARMOURS []string = []string{

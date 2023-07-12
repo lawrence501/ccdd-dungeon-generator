@@ -16,7 +16,8 @@ func generateDungeon() Dungeon {
 	return dungeon
 }
 
-func generateRoom(d Dungeon) string {
+func generateRoom(d *Dungeon) string {
+	fmt.Printf("%+v\n", d.PendingEvents)
 	room := d.Functions.room()
 	dimensions := generateSize(room)
 	contents := room.contents(d)
@@ -53,7 +54,7 @@ func (r PassageRoom) size() (int, int) {
 }
 
 func (r SmallRoom) size() (int, int) {
-	side1 := rand.Intn(10) + 1
+	side1 := rand.Intn(8) + 1
 	side2 := 100
 	for side2 >= (side1*3) || side1 >= (side2*3) || side1*side2 > 30 {
 		side2 = rand.Intn(10) + 1
@@ -62,7 +63,7 @@ func (r SmallRoom) size() (int, int) {
 }
 
 func (r LargeRoom) size() (int, int) {
-	side1 := rand.Intn(10) + 1
+	side1 := rand.Intn(8) + 4
 	side2 := 100
 	for side2 >= (side1*3) || side1 >= (side2*3) || side1*side2 < 31 {
 		side2 = rand.Intn(10) + 1
@@ -114,7 +115,7 @@ func (f *BastionFunctions) exits() string {
 	return "Stairs going 1d4 levels up and 1d4 levels down"
 }
 
-func (r PassageRoom) contents(d Dungeon) string {
+func (r PassageRoom) contents(d *Dungeon) string {
 	contentRoll := rand.Intn(20)
 	if contentRoll < 10 {
 		return "Empty"
@@ -126,7 +127,7 @@ func (r PassageRoom) contents(d Dungeon) string {
 	return generateObstacle(d)
 }
 
-func (r SmallRoom) contents(d Dungeon) string {
+func (r SmallRoom) contents(d *Dungeon) string {
 	contentRoll := rand.Intn(20)
 	if contentRoll < 3 {
 		return "Empty"
@@ -138,11 +139,36 @@ func (r SmallRoom) contents(d Dungeon) string {
 		return generateObstacle(d)
 	} else if contentRoll < 16 {
 		return generateDiscovery(d)
+	} else if contentRoll < 19 {
+		scenery := generateSmallRoomScenery(d)
+		escalation := generateEscalation(d)
+		return fmt.Sprintf("%s\n%s", scenery, escalation)
 	}
+	return generateSetPiece(d)
 }
 
-func generatePassageScenery(d Dungeon) string {
-	if d.PendingEvents[0].Category == "any" || d.PendingEvents[0].Category == "scenery" {
+func (r LargeRoom) contents(d *Dungeon) string {
+	contentRoll := rand.Intn(20)
+	if contentRoll < 1 {
+		return "Empty"
+	} else if contentRoll < 6 {
+		return generateSmallRoomScenery(d)
+	} else if contentRoll < 9 {
+		return generateNovelty(d)
+	} else if contentRoll < 12 {
+		return generateObstacle(d)
+	} else if contentRoll < 14 {
+		return generateDiscovery(d)
+	} else if contentRoll < 17 {
+		scenery := generateSmallRoomScenery(d)
+		escalation := generateEscalation(d)
+		return fmt.Sprintf("%s\n%s", scenery, escalation)
+	}
+	return generateSetPiece(d)
+}
+
+func generatePassageScenery(d *Dungeon) string {
+	if len(d.PendingEvents) > 0 && (d.PendingEvents[0].Category == "any" || d.PendingEvents[0].Category == "scenery") {
 		var event Event
 		event, d.PendingEvents = pop(d.PendingEvents)
 		return event.Message
@@ -153,30 +179,30 @@ func generatePassageScenery(d Dungeon) string {
 
 func (f *BastionFunctions) passageScenery() string {
 	scenery := [][]string{
-		[]string{
+		{
 			"Dusty suit of armour ($bodyArmour)",
 			"Mounted monster head (random monster)",
 		},
-		[]string{
+		{
 			"Weapons crossed on the wall ($weapon and $weapon)",
 		},
-		[]string{
+		{
 			"Racks hold spare weapons and ammunition (1d4x $weapon and 1d10x $ammo)",
 			"Barrels hold spare weapons and ammunition (1d4x $weapon and 1d10x $ammo)",
 		},
-		[]string{
+		{
 			"Three camp stools gathered around a small table",
 		},
-		[]string{
+		{
 			"Tapestries telling the dungeon's story line the walls",
 		},
-		[]string{
+		{
 			"Brackets hold torches (1 per side of longest wall every 15')",
 		},
-		[]string{
+		{
 			"Pushed into a corner is an archery target bristling with arrows (1d10x $ammo)",
 		},
-		[]string{
+		{
 			"A shrine to a war god (Religion DC 13 for +1 global damage for the rest of the dungeon)",
 			"A statue of a war god",
 		},
@@ -184,8 +210,8 @@ func (f *BastionFunctions) passageScenery() string {
 	return process(randSelect(randSelect(scenery)))
 }
 
-func generateSmallRoomScenery(d Dungeon) string {
-	if d.PendingEvents[0].Category == "any" || d.PendingEvents[0].Category == "scenery" {
+func generateSmallRoomScenery(d *Dungeon) string {
+	if len(d.PendingEvents) > 0 && (d.PendingEvents[0].Category == "any" || d.PendingEvents[0].Category == "scenery") {
 		var event Event
 		event, d.PendingEvents = pop(d.PendingEvents)
 		return event.Message
@@ -200,10 +226,10 @@ func (f *BastionFunctions) smallRoomScenery() string {
 		return "Tables bearing a total of 1d4x candles and an equal number of decks of cards are scattered around the room."
 	} else if sceneryRoll < 2 {
 		options := [][]string{
-			[]string{
+			{
 				"Armoury containing a spear, a shortsword, a crossbow, and a suit of studded leather armour.",
 			},
-			[]string{
+			{
 				"Armoury containing a spear, a shortsword, a crossbow, a suit of studded leather armour, and 1x vial of holy water.",
 				"Armoury containing a spear, a shortsword, a crossbow, a suit of studded leather armour, and 1x vial of acid.",
 				"Armoury containing a spear, a shortsword, a crossbow, a suit of studded leather armour, and 1x vial of alchemist's fire.",
@@ -214,9 +240,9 @@ func (f *BastionFunctions) smallRoomScenery() string {
 	} else if sceneryRoll < 3 {
 		return "Elegant dining room for 6 guests. Table settings are worth 200gp in total. Two bottles of vintage wine, worth 50gp each, stand on a side table."
 	} else if sceneryRoll < 4 {
-		return "Barracks with neatly-made beds, weapon racks (1d4x $weapon), and a table heaped with armour (1d4x $bodyArmour), game boards, and personal possessions."
+		return process("Barracks with neatly-made beds, weapon racks (1d4x $weapon), and a table heaped with armour (1d4x $bodyArmour), game boards, and personal possessions.")
 	} else if sceneryRoll < 5 {
-		return "Comfortable barracks used by high-level guards. On the walls are weapon racks (1d4x $weapon), armour stands (1d4x $bodyArmour), paintings, and a full-length mirror."
+		return process("Comfortable barracks used by high-level guards. On the walls are weapon racks (1d4x $weapon), armour stands (1d4x $bodyArmour), paintings, and a full-length mirror.")
 	} else if sceneryRoll < 6 {
 		return "A shrine on which are laid fresh food offerings (Religion DC 13 for +1 dmg barrier for the rest of the dungeon)"
 	} else if sceneryRoll < 7 {
@@ -237,8 +263,8 @@ func (f *BastionFunctions) smallRoomScenery() string {
 	return "Contains spy holes that let you see into adjoining rooms, allowing you to generate the rooms without opening the doors to them. All exits are locked without keys."
 }
 
-func generateNovelty(d Dungeon) string {
-	if d.PendingEvents[0].Category == "any" || d.PendingEvents[0].Category == "novelty" {
+func generateNovelty(d *Dungeon) string {
+	if len(d.PendingEvents) > 0 && (d.PendingEvents[0].Category == "any" || d.PendingEvents[0].Category == "novelty") {
 		var event Event
 		event, d.PendingEvents = pop(d.PendingEvents)
 		return event.Message
@@ -279,8 +305,8 @@ func (f *BastionFunctions) novelty() string {
 	return "Narrow shafts that carry sound. It is perfect for eavesdropping or communicating between distant chambers. You can generate adjoining rooms without opening their doors."
 }
 
-func generateDiscovery(d Dungeon) string {
-	if d.PendingEvents[0].Category == "any" || d.PendingEvents[0].Category == "discovery" {
+func generateDiscovery(d *Dungeon) string {
+	if len(d.PendingEvents) > 0 && (d.PendingEvents[0].Category == "any" || d.PendingEvents[0].Category == "discovery") {
 		var event Event
 		event, d.PendingEvents = pop(d.PendingEvents)
 		return event.Message
@@ -336,10 +362,10 @@ func (f *BastionFunctions) discovery() (string, []Event) {
 		return "A messenger with urgent news approaches the party, telling them that if they immediately return to town they can get the quest reward.", []Event{}
 	} else if discoveryRoll < 9 {
 		options := [][]string{
-			[]string{
+			{
 				"An armoury containing ranged weapons (1d4x $rangedWeapon), ammunition (1d10x $ammo), and ballistas (deal Trap damage of a type based on their ammunition if operated). It also contains 12x +1 Bow Arrows.",
 			},
-			[]string{
+			{
 				"An armoury containing ranged weapons (1d4x $rangedWeapon), ammunition (1d10x $ammo), and ballistas (deal Trap damage of a type based on their ammunition if operated). It also contains 12x +1 Bow Arrows and a Javelin of Lightning.",
 				"An armoury containing ranged weapons (1d4x $rangedWeapon), ammunition (1d10x $ammo), and ballistas (deal Trap damage of a type based on their ammunition if operated). It also contains 12x +1 Bow Arrows and 1x Treasure.",
 			},
@@ -353,8 +379,8 @@ func (f *BastionFunctions) discovery() (string, []Event) {
 	return "Treasure vault filled with several splintered chests and one locked (no key) iron chest containing 1x Treasure for each player.", []Event{}
 }
 
-func generateEscalation(d Dungeon) string {
-	if d.PendingEvents[0].Category == "any" || d.PendingEvents[0].Category == "escalation" {
+func generateEscalation(d *Dungeon) string {
+	if len(d.PendingEvents) > 0 && (d.PendingEvents[0].Category == "any" || d.PendingEvents[0].Category == "escalation") {
 		var event Event
 		event, d.PendingEvents = pop(d.PendingEvents)
 		return event.Message
@@ -369,7 +395,7 @@ func generateEscalation(d Dungeon) string {
 	if lootRoll == 0 {
 		ret += "\n[LOOT] 1x Treasure"
 	}
-	if d.PendingEvents[0].Category == "combat reward" {
+	if len(d.PendingEvents) > 0 && d.PendingEvents[0].Category == "combat reward" {
 		var event Event
 		event, d.PendingEvents = pop(d.PendingEvents)
 		ret += fmt.Sprintf("\n%s", event.Message)
@@ -387,22 +413,22 @@ func (f *BastionFunctions) escalation() (string, []Event) {
 		return "1d6x random monster (MEDIUM), then +x from Bastion Alert level. Guarding this room.", []Event{}
 	} else if escalationRoll < 6 {
 		options := []string{
-			"1d6x random monster (MEDIUM), then +x from Bastion Alert level. Dungeon inhabitants planning to ambush the next/current HARD combat due to disloyalty",
-			"1d6x random monster (MEDIUM), then +x from Bastion Alert level. Dungeon inhabitants planning to ambush the next/current HARD combat due to ambition",
-			"1d6x random monster (MEDIUM), then +x from Bastion Alert level. Dungeon inhabitants planning to ambush the next/current HARD combat due to revenge for a past betrayal",
+			"1d6x random monster (MEDIUM), then +x from Bastion Alert level. Dungeon inhabitants planning to ambush the next/current ENCOUNTER due to disloyalty",
+			"1d6x random monster (MEDIUM), then +x from Bastion Alert level. Dungeon inhabitants planning to ambush the next/current ENCOUNTER due to ambition",
+			"1d6x random monster (MEDIUM), then +x from Bastion Alert level. Dungeon inhabitants planning to ambush the next/current ENCOUNTER due to revenge for a past betrayal",
 			"1d6x random monster (MEDIUM), then +x from Bastion Alert level. Dungeon inhabitants planning to ambush the dungeon boss due to disloyalty",
 			"1d6x random monster (MEDIUM), then +x from Bastion Alert level. Dungeon inhabitants planning to ambush the dungeon boss due to ambition",
 			"1d6x random monster (MEDIUM), then +x from Bastion Alert level. Dungeon inhabitants planning to ambush the dungeon boss due to revenge for a past betrayal",
 		}
 		optionRoll := rand.Intn(6)
-		event := Event{}
+		newEvents := []Event{}
 		if optionRoll < 3 {
-			event = Event{
+			newEvents = append(newEvents, Event{
 				Category: "any",
 				Message:  f.setPiece(),
-			}
+			})
 		}
-		return options[optionRoll], []Event{event}
+		return options[optionRoll], newEvents
 	}
 	options := []string{
 		"You find monster tracks leading into the next room. Survival DC 13 to generate the next room before opening the door.",
@@ -419,8 +445,59 @@ func (f *BastionFunctions) escalation() (string, []Event) {
 	return randSelect(options), retEvents
 }
 
-func generateObstacle(d Dungeon) string {
-	if d.PendingEvents[0].Category == "any" || d.PendingEvents[0].Category == "obstacle" {
+func generateSetPiece(d *Dungeon) string {
+	if len(d.PendingEvents) > 0 && (d.PendingEvents[0].Category == "any" || d.PendingEvents[0].Category == "set piece") {
+		var event Event
+		event, d.PendingEvents = pop(d.PendingEvents)
+		return event.Message
+	}
+
+	ret := d.Functions.setPiece()
+
+	ret += "\n[LOOT] 1x Treasure for each player"
+	if len(d.PendingEvents) > 0 && d.PendingEvents[0].Category == "combat reward" {
+		var event Event
+		event, d.PendingEvents = pop(d.PendingEvents)
+		ret += fmt.Sprintf("\n%s", event.Message)
+	}
+	return ret
+}
+
+func (f *BastionFunctions) setPiece() string {
+	encounterRoll := rand.Intn(8)
+	if encounterRoll < 2 {
+		purposeOptions := []string{
+			"[ENCOUNTER] Raider's Lair: The area is home to a well-guarded settlement or camp. These raiders are planning to raid nearby areas for food and treasure. 1d6x random monster (MEDIUM), then +x from Bastion Alert level.",
+			"[ENCOUNTER] Raider's Lair: The area is home to a well-guarded settlement or camp. These raiders will defend themselves against outside threats. 1d6x random monster (MEDIUM), then +x from Bastion Alert level.",
+		}
+		settingOptions := []string{
+			"\nThe room features a large drum. If combat starts, a random creature tries to sound the alarm as an action while within reach of this instrument. If they do so, 1d6x random monster (MEDIUM) joins the combat from a random unopened exit.",
+			"\nThe room features a gong. If combat starts, a random creature tries to sound the alarm as an action while within reach of this instrument. If they do so, 1d6x random monster (MEDIUM) joins the combat from a random unopened exit.",
+			"\nThe room features a bugle. If combat starts, a random creature tries to sound the alarm as an action while within reach of this instrument. If they do so, 1d6x random monster (MEDIUM) joins the combat from a random unopened exit.",
+		}
+		return fmt.Sprintf("%s%s", randSelect(purposeOptions), randSelect(settingOptions))
+	} else if encounterRoll < 4 {
+		options := []string{
+			"[ENCOUNTER] Army Headquarters: The inhabitants are part of an organised military, defending the bastion. 1d6x random monster (MEDIUM), then +x from Bastion Alert level.",
+			"[ENCOUNTER] Army Headquarters: The inhabitants are part of an organised military, preparing to conqueer the local countryside. 1d6x random monster (MEDIUM), then +x from Bastion Alert level.",
+		}
+		return fmt.Sprintf("%s\nLadders lead to ledges that line the room (one per non-entrance wall). If the Bastion Alert level is greater than 0, creatures with ranged attacks are up on the ledges. They are 10x party level feet high.", randSelect(options))
+	} else if encounterRoll < 6 {
+		hiddenOptions := []string{
+			"[ENCOUNTER] War Caster: A spellcaster commands an army. Their eyes are fixed on conquest.\nThis room features an exit concealed behind a throne, which leads to a 50 foot passage before reaching another door to a new room. The last creature alive in this combat will cast ",
+			"[ENCOUNTER] War Caster: A spellcaster commands an army. Their eyes are fixed on conquest.\nThis room features an exit concealed behind a tapestry, which leads to a 50 foot passage before reaching another door to a new room. The last creature alive in this combat will cast ",
+		}
+		spellOptions := []string{
+			"expeditious retreat and then attempt to escape through this hidden exit. If the creature successfully reaches the door at the end of the passage, they are lost and are added to the next combat fought in this dungeon.",
+			"sanctuary and then attempt to escape through this hidden exit. If the creature successfully reaches the door at the end of the passage, they are lost and are added to the next combat fought in this dungeon.",
+		}
+		return fmt.Sprintf("%s%s", randSelect(hiddenOptions), randSelect(spellOptions))
+	}
+	return "Prison cells contain friendly creatures that could aid the adventurers if freed."
+}
+
+func generateObstacle(d *Dungeon) string {
+	if len(d.PendingEvents) > 0 && (d.PendingEvents[0].Category == "any" || d.PendingEvents[0].Category == "obstacle") {
 		var event Event
 		event, d.PendingEvents = pop(d.PendingEvents)
 		return event.Message

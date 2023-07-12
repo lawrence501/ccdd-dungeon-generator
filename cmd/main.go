@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"math/rand"
 	"strings"
@@ -27,6 +28,7 @@ func main() {
 
 		dungeon := generateDungeon()
 		for {
+			fmt.Println()
 			roomP := promptui.Prompt{
 				Label:    "Press enter to generate a new dungeon room, or type exit to start a new dungeon",
 				Validate: validateAny,
@@ -39,7 +41,8 @@ func main() {
 			if strings.ToLower(roomInput) == "exit" {
 				break
 			}
-			generateRoom(dungeon)
+			fmt.Println()
+			fmt.Printf("%s\n", generateRoom(&dungeon))
 		}
 
 		if err != nil {
